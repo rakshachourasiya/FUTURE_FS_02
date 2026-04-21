@@ -1,3 +1,4 @@
+require("dotenv").config({path:"./.env"});
 const express = require("express");
 const cors = require("cors");
 const mysql =require("mysql2");
@@ -5,17 +6,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db=mysql.createConnection({
-  host:"localhost",
-  user:"root",
-  password:"Raksha@24",
-  database:"crm"
-});
+
+const db=mysql.createConnection(process.env.MYSQL_PUBLIC_URL);
 db.connect((err)=>{
   if(err){
-    console.log("DB Erro",err);
-  }else{
-    console.log("MySQL Connected");
+    console.log("DB Error", err);
+  } else {
+    console.log("Railway DB Connected");
+
+    // ✅ TABLE CREATE
+    db.query(`
+      CREATE TABLE IF NOT EXISTS leads (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(100),
+        phone VARCHAR(20),
+        source VARCHAR(100),
+        status VARCHAR(50),
+        notes TEXT
+      )
+    `, (err) => {
+      if(err) console.log("Table error", err);
+      else console.log("Table ready ");
+    });
   }
 });
 
@@ -29,7 +42,7 @@ app.post("/leads", (req, res) => {
 
   db.query(sql, [name, email, phone, source, status, notes], (err, result) => {
     if (err) return res.send(err);
-    res.send("Data saved ✅");
+    res.send({message:"Data saved ✅"});
   });
 });
 
@@ -48,7 +61,7 @@ app.delete("/leads/:id",(req,res)=>{
 
   db.query("DELETE FROM leads WHERE id = ?",[id],(err)=>{
     if(err) return res.send(err);
-    res.send("Deleted");
+    res.send({message:"Deleted"});
   })
 })
 
@@ -63,7 +76,7 @@ app.put("/leads/:id", (req, res) => {
     [status, id],
     (err) => {
       if (err) return res.send(err);
-      res.send("Updated");
+      res.send({message:"Updated"});
     }
   );
 });
